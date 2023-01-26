@@ -132,14 +132,18 @@ public class FlinkBoundedSourceReader<OutputT>
   @Override
   public CompletableFuture<Void> isAvailable() {
     try {
-      if (currentSplitHasNextRecord || moveToNextSplitWithRecords() || allSplitsFinished()) {
+      if (currentSplitHasNextRecord || moveToNextSplitWithRecords()) {
+        return DATA_AVAILABLE;
+      } else if (allSplitsFinished()) {
         if (idleTimeoutReached()) {
           return DATA_AVAILABLE;
         } else {
           return idleTimeoutFuture;
         }
       } else {
-        isAvailableFuture = new CompletableFuture<>();
+        if (isAvailableFuture.isDone()) {
+          isAvailableFuture = new CompletableFuture<>();
+        }
         return isAvailableFuture;
       }
     } catch (IOException e) {
